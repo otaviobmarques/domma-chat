@@ -27,7 +27,7 @@ h3 { font-size: 14px; font-weight: 700; margin: 0; }
 /* Topo */
 .topo { background: var(--marinho); color: #fff; display: flex; align-items: center; gap: 18px; padding: 0 20px; height: 56px; position: sticky; top: 0; z-index: 20; }
 .topo .marca { display: flex; align-items: center; gap: 12px; }
-.topo .marca img { height: 26px; }
+.topo .marca img { height: 30px; }
 .topo .marca span { border-left: 1px solid rgba(255,255,255,.25); padding-left: 12px; font-weight: 700; }
 .topo nav { display: flex; gap: 2px; margin: 0 auto; overflow-x: auto; scrollbar-width: none; }
 .topo nav a { color: #D9D4F5; padding: 7px 11px; border-radius: 8px; font-size: 13px; white-space: nowrap; font-weight: 500; }

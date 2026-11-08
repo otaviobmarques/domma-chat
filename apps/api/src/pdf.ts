@@ -99,7 +99,7 @@ function cabecalho(p: Pincel, titulo: string, subtitulo: string, conta: string) 
   const d = p.doc;
   d.save().rect(0, 0, LARGURA, 92).fill(COR.marinho).restore();
   d.save().circle(LARGURA - 40, 10, 70).fillOpacity(0.18).fill(COR.roxo).restore();
-  d.image(path.join(ASSETS, "logo-branco.png"), MARGEM, 26, { height: 30 });
+  d.image(path.join(ASSETS, "logo-branco.png"), MARGEM - 3, 24, { height: 36 });
   p.texto(titulo, MARGEM + 200, 24, { largura: UTIL - 200, peso: 800, tam: 17, cor: COR.branco, alinhar: "right" });
   p.texto(subtitulo, MARGEM + 200, 48, { largura: UTIL - 200, tam: 8.5, cor: "#CFC8F5", alinhar: "right" });
   p.texto(`Conta: ${conta}`, MARGEM + 200, 62, { largura: UTIL - 200, tam: 8, cor: "#CFC8F5", alinhar: "right" });
