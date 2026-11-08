@@ -104,6 +104,22 @@ Webhooks a configurar:
 - Gateways: o endereço aparece em **Pagamentos**
 - Goalfy/Zapier: o endereço e o token aparecem em **Conexões**
 
+## Produção (no ar desde 08/11/2026)
+
+| Parte | Onde | Endereço |
+|---|---|---|
+| Painel | Vercel · equipe REDBOX · projeto `domma-chat` (raiz `apps/web`) | https://chat.dommasistemas.com.br |
+| API + webhooks | Railway · projeto `domma-chat` · serviço `api` (us-east4, `PAPEL=api`, `PORT=3333`) | https://api.chat.dommasistemas.com.br |
+| Workers | Railway · serviço `workers` (`PAPEL=workers`) | — |
+| Redis | Railway · serviço `Redis` | rede privada |
+| Arquivos | Railway · bucket `arquivos` (S3) | — |
+| Banco | Supabase · projeto `domma-chat` (sa-east-1), schema `domma`, usuário `domma_app` | pooler `aws-1-sa-east-1` |
+| DNS | HostGator (`dommasistemas.com.br`) | CNAME `chat` → Vercel · CNAME `api.chat` → Railway |
+
+Cada envio para a `main` publica o painel (Vercel) e a API e os workers (Railway).
+Os segredos (`JWT_SECRET`, `ENCRYPTION_KEY`, senha do banco) ficam só nas variáveis do Railway. **Não troque `ENCRYPTION_KEY`**: as chaves de IA, gateways e WhatsApp salvas no banco deixariam de abrir.
+As tabelas ficam no schema `domma`, que a API pública da Supabase não expõe. Novas migrações rodam sozinhas quando a API inicia.
+
 ## Situação da implementação
 
 Pronto e testado neste ambiente (Postgres + Redis locais, simulador e provedor simulado):
