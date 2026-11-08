@@ -1,5 +1,5 @@
 -- Domma Chat — esquema inicial (seção 5 do descritivo). Todas as tabelas têm conta_id (multiempresa).
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+DO $$ BEGIN CREATE EXTENSION IF NOT EXISTS pgcrypto; EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
 
 CREATE TABLE contas (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

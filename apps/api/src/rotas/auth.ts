@@ -6,9 +6,9 @@ import { autenticar } from "../app.ts";
 
 export async function rotasAuth(app: FastifyInstance) {
   app.post("/api/v1/auth/login", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
-    const { email, senha } = z.object({ email: z.string().email(), senha: z.string().min(1) }).parse(req.body);
-    const u = await q1<any>("SELECT * FROM usuarios WHERE lower(email) = lower($1)", [email]);
-    if (!u || !(await bcrypt.compare(senha, u.senha_hash))) return reply.code(401).send({ erro: "e-mail ou senha incorretos" });
+    const { email, senha } = z.object({ email: z.string().trim().min(1), senha: z.string().min(1) }).parse(req.body);
+    const u = await q1<any>("SELECT * FROM usuarios WHERE lower(email) = lower($1) OR lower(login) = lower($1)", [email]);
+    if (!u || !(await bcrypt.compare(senha, u.senha_hash))) return reply.code(401).send({ erro: "usuário ou senha incorretos" });
     await q("UPDATE usuarios SET status = 'online' WHERE id = $1", [u.id]);
     const token = app.jwt.sign({ sub: u.id, conta: u.conta_id, perfil: u.perfil, nome: u.nome });
     return { token, usuario: { id: u.id, nome: u.nome, email: u.email, perfil: u.perfil, contaId: u.conta_id } };
