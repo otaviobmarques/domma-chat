@@ -6,6 +6,7 @@ import { processarFollowUp } from "./followup.ts";
 import { processarJobIA } from "./ia-jobs.ts";
 import { agendarManutencao, processarManutencao } from "./manutencao.ts";
 import { processarMidia } from "./midia.ts";
+import { processarIntegracao } from "./integracoes.ts";
 import { processarConversa } from "./processar.ts";
 
 /** Ordem garantida por conversa: trava no Redis; sem trava, reagenda em 500 ms (seção 7.2). */
@@ -40,6 +41,7 @@ if (grupo === "todos" || grupo === "atendimento") {
   criar(NOMES.envio, comTrava((job, token) => processarEnvio(job, token)), 16);
   criar(NOMES.midia, processarMidia, 4);
   criar(NOMES.followUp, processarFollowUp, 4);
+  criar(NOMES.integracoes, processarIntegracao, 4);
 }
 if (grupo === "todos" || grupo === "manutencao") {
   await agendarManutencao();

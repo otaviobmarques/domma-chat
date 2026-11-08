@@ -17,7 +17,8 @@
     "start:workers": "tsx apps/workers/src/index.ts",
     "build:web": "npm run build -w @domma/web",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test packages/*/src/**/*.test.ts apps/*/src/**/*.test.ts"
+    "test": "tsx --test packages/*/src/*.test.ts",
+    "test:e2e": "tsx scripts/teste-e2e.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

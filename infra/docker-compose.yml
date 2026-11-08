@@ -1,0 +1,49 @@
+# Ambiente local completo: docker compose -f infra/docker-compose.yml up -d
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment: { POSTGRES_USER: domma, POSTGRES_PASSWORD: domma, POSTGRES_DB: domma }
+    ports: ["5432:5432"]
+    volumes: [pg:/var/lib/postgresql/data]
+  redis:
+    # BullMQ exige noeviction; AOF para não perder jobs (seção 7.3)
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports: ["6379:6379"]
+    volumes: [redis:/data]
+  # Evolution API (QR Code), com Postgres e Redis exclusivos (seção 6.2)
+  evolution-db:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: evolution, POSTGRES_PASSWORD: evolution, POSTGRES_DB: evolution }
+    volumes: [evo-pg:/var/lib/postgresql/data]
+  evolution-redis:
+    image: redis:7-alpine
+  evolution:
+    image: evoapicloud/evolution-api:v2.3.0
+    ports: ["8080:8080"]
+    environment:
+      SERVER_URL: http://localhost:8080
+      AUTHENTICATION_API_KEY: ${EVOLUTION_GLOBAL_KEY:-troque-esta-chave}
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evolution:evolution@evolution-db:5432/evolution
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://evolution-redis:6379/1
+      CONFIG_SESSION_PHONE_CLIENT: Domma Chat
+    volumes: [evo-instances:/evolution/instances]
+    depends_on: [evolution-db, evolution-redis]
+  api:
+    build: { context: .., dockerfile: Dockerfile }
+    command: ["npm", "run", "start:api"]
+    env_file: ../.env
+    environment: { DATABASE_URL: postgres://domma:domma@postgres:5432/domma, REDIS_URL: redis://redis:6379, EVOLUTION_URL: http://evolution:8080 }
+    ports: ["3333:3333"]
+    volumes: [arquivos:/app/armazenamento]
+    depends_on: [postgres, redis]
+  workers:
+    build: { context: .., dockerfile: Dockerfile }
+    command: ["npm", "run", "start:workers"]
+    env_file: ../.env
+    environment: { DATABASE_URL: postgres://domma:domma@postgres:5432/domma, REDIS_URL: redis://redis:6379, EVOLUTION_URL: http://evolution:8080 }
+    volumes: [arquivos:/app/armazenamento]
+    depends_on: [postgres, redis]
+volumes: { pg: {}, redis: {}, evo-pg: {}, evo-instances: {}, arquivos: {} }
