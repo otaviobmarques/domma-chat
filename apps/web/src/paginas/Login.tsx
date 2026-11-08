@@ -8,12 +8,12 @@ export function Login() {
   const nav = useNavigate();
   const [email, setEmail] = useState(""); const [senha, setSenha] = useState("");
   const [erro, setErro] = useState(""); const [enviando, setEnviando] = useState(false);
-  if (eu) return <Navigate to="/" replace />;
+  if (eu) return <Navigate to={eu.admin_plataforma && !eu.suporte ? "/plataforma" : "/"} replace />;
   return (
     <div className="login">
       <form className="cartao pilha" onSubmit={async (e) => {
         e.preventDefault(); setErro(""); setEnviando(true);
-        try { const r = await api<{ token: string }>("/auth/login", { corpo: { email, senha } }); await entrar(r.token); nav("/"); }
+        try { const r = await api<{ token: string; usuario: { plataforma?: boolean } }>("/auth/login", { corpo: { email, senha } }); await entrar(r.token); nav(r.usuario.plataforma ? "/plataforma" : "/"); }
         catch (x) { setErro((x as Error).message); } finally { setEnviando(false); }
       }}>
         <img src="/logo.png" alt="Domma Tecnologia" style={{ height: 40, alignSelf: "flex-start", marginBottom: 6 }} />

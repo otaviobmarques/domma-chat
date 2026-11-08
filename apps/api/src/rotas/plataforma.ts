@@ -26,7 +26,7 @@ export async function rotasPlataforma(app: FastifyInstance) {
            (SELECT count(*)::int FROM conversas v WHERE v.conta_id = c.id AND v.ultima_mensagem_em > now() - interval '30 days') AS conversas_30d,
            (SELECT COALESCE(sum(custo),0)::float FROM uso_ia i WHERE i.conta_id = c.id AND i.criado_em > date_trunc('month', now())) AS custo_ia_mes,
            (SELECT max(m.criado_em) FROM mensagens m WHERE m.conta_id = c.id) AS ultima_atividade
-      FROM contas c ORDER BY c.criado_em`));
+      FROM contas c ORDER BY (c.plano = 'plataforma') DESC, c.criado_em`));
 
   app.post("/api/v1/plataforma/contas", { preHandler: exigirPlataforma }, async (req) => {
     const b = z.object({ nome: z.string().min(2), plano: z.string().default("padrao"), admin_nome: z.string().min(2), admin_email: z.string().email(), admin_senha: z.string().min(8) }).parse(req.body);
