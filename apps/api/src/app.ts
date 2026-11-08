@@ -55,7 +55,11 @@ export function exigirPerfil(...perfis: Usuario["perfil"][]) {
 
 /** Só o administrador da plataforma Domma (SaaS): infraestrutura e todos os clientes. */
 export async function exigirPlataforma(req: FastifyRequest, reply: FastifyReply) {
-  if (!req.usuario?.plataforma) return reply.code(403).send({ erro: "área exclusiva do administrador da plataforma" });
+  // Confere no banco a cada acesso: vale para sessões antigas e para permissões retiradas.
+  const { q1 } = await import("@domma/db");
+  const u = await q1<{ admin_plataforma: boolean }>("SELECT admin_plataforma FROM usuarios WHERE id = $1", [req.usuario?.id]);
+  if (!u?.admin_plataforma) return reply.code(403).send({ erro: "área exclusiva do administrador da plataforma" });
+  req.usuario.plataforma = true;
 }
 
 export class ErroHttp extends Error { constructor(public statusCode: number, msg: string) { super(msg); } }

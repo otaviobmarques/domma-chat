@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.ts";
-import { Carregando } from "../componentes.tsx";
 import { useAcao } from "../contexto.tsx";
 
 type Situacao = "ok" | "atencao" | "falha" | "inativo";
@@ -16,9 +15,14 @@ export function PainelSaude({ rota, titulo, descricao }: { rota: string; titulo:
   const acao = useAcao();
   const [r, setR] = useState<Relatorio | null>(null);
   const [verificando, setVerificando] = useState(false);
-  const carregar = (forcar = false) => api<Relatorio>(`${rota}${forcar ? "?forcar=1" : ""}`).then(setR);
-  useEffect(() => { carregar().catch(() => {}); const t = setInterval(() => carregar().catch(() => {}), 60000); return () => clearInterval(t); }, [rota]);
-  if (!r) return <Carregando />;
+  const [erro, setErro] = useState("");
+  const carregar = (forcar = false) => api<Relatorio>(`${rota}${forcar ? "?forcar=1" : ""}`).then((x) => { setR(x); setErro(""); });
+  useEffect(() => {
+    const ir = () => carregar().catch((e) => setErro(e.message));
+    ir(); const t = setInterval(ir, 60000); return () => clearInterval(t);
+  }, [rota]);
+  if (!r && erro) return <div className="aviso amarelo">Não foi possível verificar agora: {erro}. <button className="btn pequeno" onClick={() => carregar(true).catch((e) => setErro(e.message))}>Tentar de novo</button> Se persistir, saia e entre de novo.</div>;
+  if (!r) return <div className="vazio">Verificando a plataforma… (pode levar alguns segundos)</div>;
   const grupos = [...new Set(r.checagens.map((c) => c.grupo))];
   const conta = (s: Situacao) => r.checagens.filter((c) => c.status === s).length;
   return (

@@ -15,10 +15,12 @@ export async function rotasAuth(app: FastifyInstance) {
     return { token, usuario: { id: u.id, nome: u.nome, email: u.email, perfil: u.perfil, contaId: u.conta_id, plataforma: !!u.admin_plataforma } };
   });
 
-  app.get("/api/v1/auth/eu", { preHandler: autenticar }, async (req) => {
+  app.get("/api/v1/auth/eu", { preHandler: autenticar }, async (req, reply) => {
     const u = await q1<any>("SELECT u.id, u.nome, u.email, u.perfil, u.status, u.filas, u.admin_plataforma, u.conta_id AS conta_origem FROM usuarios u WHERE u.id = $1", [req.usuario.id]);
     const c = await q1<any>("SELECT id, nome FROM contas WHERE id = $1", [req.usuario.contaId]);
     const suporte = u?.conta_origem !== req.usuario.contaId;
+    // Sessão de antes de o usuário mudar de conta (e não é acesso de suporte): pede login de novo.
+    if (!u || (suporte && !(req.usuario.plataforma && u.admin_plataforma))) return reply.code(401).send({ erro: "sua sessão expirou, entre de novo" });
     return { ...u, perfil: req.usuario.perfil, nome: req.usuario.nome, conta_id: c?.id, conta_nome: c?.nome, suporte, vapidPublica: process.env.VAPID_PUBLIC_KEY ?? null };
   });
 
