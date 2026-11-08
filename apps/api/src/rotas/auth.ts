@@ -10,7 +10,8 @@ export async function rotasAuth(app: FastifyInstance) {
     const u = await q1<any>("SELECT * FROM usuarios WHERE lower(email) = lower($1) OR lower(login) = lower($1)", [email]);
     if (!u || !(await bcrypt.compare(senha, u.senha_hash))) return reply.code(401).send({ erro: "usuário ou senha incorretos" });
     await q("UPDATE usuarios SET status = 'online' WHERE id = $1", [u.id]);
-    if (!(await q1<{ ativa: boolean }>("SELECT ativa FROM contas WHERE id = $1", [u.conta_id]))?.ativa && !u.admin_plataforma) return reply.code(403).send({ erro: "esta conta está suspensa" });
+    const conta = await q1<{ ativa: boolean; bloqueio_motivo: string | null }>("SELECT ativa, bloqueio_motivo FROM contas WHERE id = $1", [u.conta_id]);
+    if (!conta?.ativa && !u.admin_plataforma) return reply.code(403).send({ erro: `Acesso bloqueado${conta?.bloqueio_motivo ? `: ${conta.bloqueio_motivo}` : ""}. Fale com a Domma Tecnologia.` });
     const token = app.jwt.sign({ sub: u.id, conta: u.conta_id, perfil: u.perfil, nome: u.nome, plat: !!u.admin_plataforma });
     return { token, usuario: { id: u.id, nome: u.nome, email: u.email, perfil: u.perfil, contaId: u.conta_id, plataforma: !!u.admin_plataforma } };
   });

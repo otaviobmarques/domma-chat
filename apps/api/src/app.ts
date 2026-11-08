@@ -37,13 +37,29 @@ export async function criarApp() {
   return app;
 }
 
-/** Autenticação por JWT e filtro pela conta do usuário (seção 8). */
+// Contas bloqueadas: cache de 30 s para não consultar o banco a cada requisição.
+const cacheAtiva = new Map<string, { ativa: boolean; motivo: string | null; ate: number }>();
+async function contaAtiva(contaId: string) {
+  const c = cacheAtiva.get(contaId);
+  if (c && c.ate > Date.now()) return c;
+  const { q1 } = await import("@domma/db");
+  const r = await q1<{ ativa: boolean; bloqueio_motivo: string | null }>("SELECT ativa, bloqueio_motivo FROM contas WHERE id = $1", [contaId]);
+  const v = { ativa: !!r?.ativa, motivo: r?.bloqueio_motivo ?? null, ate: Date.now() + 30000 };
+  cacheAtiva.set(contaId, v);
+  return v;
+}
+
+/** Autenticação por JWT e filtro pela conta do usuário (seção 8). Conta bloqueada derruba as sessões abertas. */
 export async function autenticar(req: FastifyRequest, reply: FastifyReply) {
   try {
     const p = await req.jwtVerify<{ sub: string; conta: string; perfil: Usuario["perfil"]; nome: string; plat?: boolean }>();
     req.usuario = { id: p.sub, contaId: p.conta, perfil: p.perfil, nome: p.nome, plataforma: !!p.plat };
   } catch {
     return reply.code(401).send({ erro: "faça login novamente" });
+  }
+  if (!req.usuario.plataforma) {
+    const c = await contaAtiva(req.usuario.contaId);
+    if (!c.ativa) return reply.code(401).send({ erro: `Acesso bloqueado${c.motivo ? `: ${c.motivo}` : ""}. Fale com a Domma Tecnologia.` });
   }
 }
 

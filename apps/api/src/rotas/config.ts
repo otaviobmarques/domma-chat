@@ -9,6 +9,7 @@ import { AdminEvolution, nomeInstancia } from "@domma/whatsapp";
 import { autenticar, exigirPerfil, naoEncontrado, ErroHttp } from "../app.ts";
 import { receberMensagem } from "../ingestao.ts";
 import { extrairTexto } from "../extrair-texto.ts";
+import { conferirLimite } from "./plataforma.ts";
 
 const admin = exigirPerfil("admin");
 const gestor = exigirPerfil("admin", "supervisor");
@@ -173,6 +174,7 @@ export async function rotasConfig(app: FastifyInstance) {
     r.post("/api/v1/conexoes", { preHandler: admin }, async (req) => {
       const b = z.object({ tipo: z.enum(["oficial", "qr", "simulador"]), nome: z.string().min(1), numero: z.string().optional(), modo_padrao: z.enum(["ia", "aprova", "humano"]).default("ia"),
         token: z.string().optional(), phone_number_id: z.string().optional(), waba_id: z.string().optional(), app_secret: z.string().optional() }).parse(req.body);
+      if (b.tipo !== "simulador") await conferirLimite(req.usuario.contaId, "numeros");
       let cred: any = null, status = "aguardando_qr";
       if (b.tipo === "oficial") {
         if (!b.token || !b.phone_number_id || !b.app_secret) throw new ErroHttp(400, "Informe token de sistema, phone_number_id e app_secret.");
@@ -241,6 +243,7 @@ export async function rotasConfig(app: FastifyInstance) {
          FROM usuarios u WHERE u.conta_id = $1 ORDER BY u.nome`, [req.usuario.contaId]));
     r.post("/api/v1/usuarios", { preHandler: admin }, async (req) => {
       const b = z.object({ nome: z.string().min(2), email: z.string().email(), senha: z.string().min(8), perfil: z.enum(["admin", "supervisor", "atendente"]), filas: z.array(z.string()).default([]), cidades: z.array(z.string()).default([]) }).parse(req.body);
+      await conferirLimite(req.usuario.contaId, "usuarios");
       const u = await q1<any>("INSERT INTO usuarios (conta_id, nome, email, senha_hash, perfil, filas, cidades) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, nome, email, perfil, filas, cidades, status",
         [req.usuario.contaId, b.nome, b.email.toLowerCase(), await bcrypt.hash(b.senha, 10), b.perfil, b.filas, b.cidades]).catch((e) => { if (e.code === "23505") throw new ErroHttp(409, "e-mail já cadastrado"); throw e; });
       await auditar(req.usuario.contaId, "usuario", "usuario:criar", u.id, { email: b.email, perfil: b.perfil }, req.usuario.id);
