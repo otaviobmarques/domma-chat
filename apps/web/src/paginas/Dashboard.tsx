@@ -149,7 +149,7 @@ export function Dashboard() {
       </div>
 
       <div className="cartao">
-        <div className="cartao-cab"><h2>Saúde do sistema</h2></div>
+        <div className="cartao-cab"><h2>Saúde do sistema</h2><Link to="/saude" className="mini" style={{ color: "var(--roxo-2)", fontWeight: 700 }}>Ver tudo</Link></div>
         <div className="grade" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 10 }}>
           {d.saude.conexoes.map((c: any) => (<div key={c.id} className="bloco"><div className="mini">WhatsApp</div><h3>{c.tipo === "oficial" ? "API Oficial" : c.tipo === "qr" ? "QR Code" : "Simulador"} · {c.nome}</h3><span className={`selo ${STATUS_CX[c.status]?.[1]}`} style={{ marginTop: 6 }}>{STATUS_CX[c.status]?.[0] ?? c.status}</span></div>))}
           {d.saude.provedores.map((p: any, k: number) => { const falha = p.degradado_ate && new Date(p.degradado_ate) > new Date(); const lenta = (p.ultimo_tempo_ms ?? 0) > 8000; return (

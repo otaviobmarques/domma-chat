@@ -5,13 +5,13 @@ import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
 import { ZodError } from "zod";
 
-export interface Usuario { id: string; contaId: string; perfil: "admin" | "supervisor" | "atendente"; nome: string }
+export interface Usuario { id: string; contaId: string; perfil: "admin" | "supervisor" | "atendente"; nome: string; plataforma: boolean }
 
 declare module "fastify" {
   interface FastifyRequest { rawBody?: Buffer; usuario: Usuario }
 }
 declare module "@fastify/jwt" {
-  interface FastifyJWT { payload: { sub: string; conta: string; perfil: Usuario["perfil"]; nome: string } }
+  interface FastifyJWT { payload: { sub: string; conta: string; perfil: Usuario["perfil"]; nome: string; plat?: boolean } }
 }
 
 export async function criarApp() {
@@ -40,8 +40,8 @@ export async function criarApp() {
 /** Autenticação por JWT e filtro pela conta do usuário (seção 8). */
 export async function autenticar(req: FastifyRequest, reply: FastifyReply) {
   try {
-    const p = await req.jwtVerify<{ sub: string; conta: string; perfil: Usuario["perfil"]; nome: string }>();
-    req.usuario = { id: p.sub, contaId: p.conta, perfil: p.perfil, nome: p.nome };
+    const p = await req.jwtVerify<{ sub: string; conta: string; perfil: Usuario["perfil"]; nome: string; plat?: boolean }>();
+    req.usuario = { id: p.sub, contaId: p.conta, perfil: p.perfil, nome: p.nome, plataforma: !!p.plat };
   } catch {
     return reply.code(401).send({ erro: "faça login novamente" });
   }
@@ -51,6 +51,11 @@ export function exigirPerfil(...perfis: Usuario["perfil"][]) {
   return async (req: FastifyRequest, reply: FastifyReply) => {
     if (!perfis.includes(req.usuario.perfil)) return reply.code(403).send({ erro: "seu perfil não tem permissão para isso" });
   };
+}
+
+/** Só o administrador da plataforma Domma (SaaS): infraestrutura e todos os clientes. */
+export async function exigirPlataforma(req: FastifyRequest, reply: FastifyReply) {
+  if (!req.usuario?.plataforma) return reply.code(403).send({ erro: "área exclusiva do administrador da plataforma" });
 }
 
 export class ErroHttp extends Error { constructor(public statusCode: number, msg: string) { super(msg); } }

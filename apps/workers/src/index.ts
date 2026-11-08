@@ -1,5 +1,5 @@
 import { DelayedError, Worker, type Job } from "bullmq";
-import { conexaoFilas, criarAlerta, liberarTrava, NOMES, obterTrava } from "@domma/core";
+import { batimentoWorkers, conexaoFilas, criarAlerta, liberarTrava, NOMES, obterTrava } from "@domma/core";
 import { migrar } from "@domma/db/migrate";
 import { processarEnvio } from "./envio.ts";
 import { processarFollowUp } from "./followup.ts";
@@ -47,6 +47,9 @@ if (grupo === "todos" || grupo === "manutencao") {
   await agendarManutencao();
   criar(NOMES.manutencao, processarManutencao, 1);
 }
+// Sinal de vida lido pela tela Saúde (a cada 15 s).
+await batimentoWorkers(workers.length);
+setInterval(() => batimentoWorkers(workers.length).catch(() => {}), 15_000);
 console.log(`workers no ar (grupo: ${grupo}): ${workers.map((w) => w.name).join(", ")}`);
 
 const parar = async () => { await Promise.all(workers.map((w) => w.close())); process.exit(0); };

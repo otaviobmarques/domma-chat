@@ -10,13 +10,16 @@ export async function rotasAuth(app: FastifyInstance) {
     const u = await q1<any>("SELECT * FROM usuarios WHERE lower(email) = lower($1) OR lower(login) = lower($1)", [email]);
     if (!u || !(await bcrypt.compare(senha, u.senha_hash))) return reply.code(401).send({ erro: "usuário ou senha incorretos" });
     await q("UPDATE usuarios SET status = 'online' WHERE id = $1", [u.id]);
-    const token = app.jwt.sign({ sub: u.id, conta: u.conta_id, perfil: u.perfil, nome: u.nome });
-    return { token, usuario: { id: u.id, nome: u.nome, email: u.email, perfil: u.perfil, contaId: u.conta_id } };
+    if (!(await q1<{ ativa: boolean }>("SELECT ativa FROM contas WHERE id = $1", [u.conta_id]))?.ativa && !u.admin_plataforma) return reply.code(403).send({ erro: "esta conta está suspensa" });
+    const token = app.jwt.sign({ sub: u.id, conta: u.conta_id, perfil: u.perfil, nome: u.nome, plat: !!u.admin_plataforma });
+    return { token, usuario: { id: u.id, nome: u.nome, email: u.email, perfil: u.perfil, contaId: u.conta_id, plataforma: !!u.admin_plataforma } };
   });
 
   app.get("/api/v1/auth/eu", { preHandler: autenticar }, async (req) => {
-    const u = await q1<any>("SELECT u.id, u.nome, u.email, u.perfil, u.status, u.filas, c.nome AS conta_nome, c.id AS conta_id FROM usuarios u JOIN contas c ON c.id = u.conta_id WHERE u.id = $1", [req.usuario.id]);
-    return { ...u, vapidPublica: process.env.VAPID_PUBLIC_KEY ?? null };
+    const u = await q1<any>("SELECT u.id, u.nome, u.email, u.perfil, u.status, u.filas, u.admin_plataforma, u.conta_id AS conta_origem FROM usuarios u WHERE u.id = $1", [req.usuario.id]);
+    const c = await q1<any>("SELECT id, nome FROM contas WHERE id = $1", [req.usuario.contaId]);
+    const suporte = u?.conta_origem !== req.usuario.contaId;
+    return { ...u, perfil: req.usuario.perfil, nome: req.usuario.nome, conta_id: c?.id, conta_nome: c?.nome, suporte, vapidPublica: process.env.VAPID_PUBLIC_KEY ?? null };
   });
 
   app.patch("/api/v1/auth/status", { preHandler: autenticar }, async (req) => {

@@ -5,3 +5,4 @@ export * from "./armazenamento.ts";
 export * from "./notificacoes.ts";
 export * from "./conversas.ts";
 export * from "./acoes.ts";
+export * from "./saude.ts";

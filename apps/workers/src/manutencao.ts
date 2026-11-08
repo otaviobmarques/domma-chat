@@ -1,6 +1,6 @@
 import type { Job } from "bullmq";
 import { q } from "@domma/db";
-import { criarAlerta, emitirConversa, enviarSistema, evento, filas, notificarGestores, publicar, resolverAlerta } from "@domma/core";
+import { criarAlerta, emitirConversa, enviarSistema, evento, filas, notificarGestores, publicar, resolverAlerta, vigiarSaude } from "@domma/core";
 import { AdminEvolution, nomeInstancia } from "@domma/whatsapp";
 
 export async function agendarManutencao() {
@@ -9,6 +9,7 @@ export async function agendarManutencao() {
   await filas.manutencao.upsertJobScheduler("saude-ia", { every: 60_000 }, { name: "saude-ia" });
   await filas.manutencao.upsertJobScheduler("encerrar", { every: 15 * 60_000 }, { name: "encerrar" });
   await filas.manutencao.upsertJobScheduler("metricas", { every: 10_000 }, { name: "metricas" });
+  await filas.manutencao.upsertJobScheduler("saude", { every: 5 * 60_000 }, { name: "saude" });
   await filas.manutencao.upsertJobScheduler("limpeza", { pattern: "0 3 * * *", tz: "America/Sao_Paulo" }, { name: "limpeza" });
 }
 
@@ -24,6 +25,7 @@ export async function processarManutencao(job: Job) {
       return "ok";
     }
     case "limpeza": return limpeza();
+    case "saude": await vigiarSaude(); return "ok";
   }
 }
 

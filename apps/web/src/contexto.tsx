@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { api, sessao } from "./api.ts";
 
-export interface Eu { id: string; nome: string; email: string; perfil: "admin" | "supervisor" | "atendente"; status: string; conta_nome: string; conta_id: string; vapidPublica: string | null }
+export interface Eu { id: string; nome: string; email: string; perfil: "admin" | "supervisor" | "atendente"; status: string; conta_nome: string; conta_id: string; vapidPublica: string | null; admin_plataforma: boolean; suporte?: boolean }
 interface Ctx { eu: Eu | null; carregando: boolean; entrar: (token: string) => Promise<void>; sair: () => void; aviso: (t: string, erro?: boolean) => void }
 const C = createContext<Ctx>(null as any);
 export const useApp = () => useContext(C);

@@ -12,6 +12,7 @@ import { rotasConfig } from "./rotas/config.ts";
 import { rotasConversas } from "./rotas/conversas.ts";
 import { rotasPaineis } from "./rotas/paineis.ts";
 import { rotasWebhooks } from "./rotas/webhooks.ts";
+import { rotasPlataforma } from "./rotas/plataforma.ts";
 
 await migrar();
 const app = await criarApp();
@@ -22,6 +23,7 @@ await app.register(rotasAuth);
 await app.register(rotasConfig);
 await app.register(rotasConversas);
 await app.register(rotasPaineis);
+await app.register(rotasPlataforma);
 
 // Em produção a API também pode servir o painel já compilado (apps/web/dist).
 const web = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "web", "dist");
