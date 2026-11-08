@@ -116,7 +116,7 @@ Webhooks a configurar:
 | Banco | Supabase · projeto `domma-chat` (sa-east-1), schema `domma`, usuário `domma_app` | pooler `aws-1-sa-east-1` |
 | DNS | HostGator (`dommasistemas.com.br`) | CNAME `chat` → Vercel · CNAME `api.chat` → Railway |
 
-Cada envio para a `main` publica o painel (Vercel) e a API e os workers (Railway).
+Cada envio para a `main` publica sozinho o painel (Vercel), a API e os workers (Railway, pelo aplicativo do Railway no GitHub).
 Os segredos (`JWT_SECRET`, `ENCRYPTION_KEY`, senha do banco) ficam só nas variáveis do Railway. **Não troque `ENCRYPTION_KEY`**: as chaves de IA, gateways e WhatsApp salvas no banco deixariam de abrir.
 As tabelas ficam no schema `domma`, que a API pública da Supabase não expõe. Novas migrações rodam sozinhas quando a API inicia.
 
