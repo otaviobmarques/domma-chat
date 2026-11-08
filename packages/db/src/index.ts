@@ -10,6 +10,13 @@ export const pool = new Pool({
   max: Number(process.env.DB_POOL_MAX ?? 10),
 });
 
+// Na Supabase as tabelas ficam no schema "domma" (fora da API pública). Localmente, "public".
+const schema = process.env.DB_SCHEMA;
+if (schema) {
+  if (!/^[a-z_][a-z0-9_]*$/.test(schema)) throw new Error("DB_SCHEMA inválido");
+  pool.on("connect", (c) => { c.query(`SET search_path TO ${schema}, extensions, public`).catch(() => {}); });
+}
+
 export type Executor = Pick<pg.PoolClient, "query">;
 
 export async function q<T = any>(sql: string, params: unknown[] = [], ex: Executor = pool): Promise<T[]> {
